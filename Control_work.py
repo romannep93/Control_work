@@ -18,14 +18,7 @@ def parse_html(url):
         response = requests.get(base_url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            links = []
-            for link in soup.find_all('a'):
-                href = link.get('href')
-                if href and validate_url(href):
-                    links.append(href)
-                for text in link.stripped_strings:
-                    if validate_url(text):
-                        links.append(text)
+            links = [link['href'] for link in soup.find_all('a')]
             absolute_links = [urljoin(base_url, link) for link in links]
             return absolute_links
         else:
@@ -40,7 +33,9 @@ def save_valid_links(links, filename):
     with open(filename, 'a') as file:
         for link in links:
             if validate_url(link):
-                file.write(link + '\n')
+                response = requests.get(link)
+                if response.status_code == 200:
+                    file.write(link + '\n')
 
 
 def save_broken_links(links, filename):
