@@ -1,25 +1,25 @@
-The code starts by importing the necessary modules and defining a function to validate URLs using the validators library.
+It imports the necessary libraries: argparse for command-line argument parsing, requests for making HTTP requests, BeautifulSoup for HTML parsing, and validators for URL validation.
 
-The parse_html function is responsible for parsing the HTML content of a webpage and extracting links. It takes a URL as input.
+The validate_url function is defined to check if a URL is valid using the validators library.
 
-Inside the parse_html function:
+The parse_html function is defined to parse the HTML page. It takes a URL as input.
 
-The URL is parsed using urlparse from the urllib.parse module. If the URL doesn't have a scheme (e.g., "http://" or "https://"), it adds the "http://" scheme by default.
-The requests.get function is used to make a GET request to the URL, and the response is obtained.
-If the response status code is 200 (indicating a successful response), the HTML content is parsed using BeautifulSoup from the bs4 library.
-Links are extracted from <a> tags' href attributes using a list comprehension and added to the links list.
-Additionally, a loop iterates through all HTML tags and their attributes. If an attribute value is a string and a valid URL, it is added to the links list.
-The base_url is used to resolve relative links, and the urljoin function is used to convert relative links to absolute links.
-The function returns a list of absolute links found in the HTML content.
-The save_valid_links and save_broken_links functions are responsible for saving the extracted links to files based on their validity.
+The URL is parsed using urlparse to obtain the base URL. If the scheme is missing, it is set to 'http' by default.
 
-The save_valid_links function takes a list of links and a filename. It opens the file in append mode and writes each valid link to a new line in the file.
-The save_broken_links function takes a list of links and a filename. It opens the file in append mode and writes each broken (invalid) link to a new line in the file.
-In the main part of the code:
+A GET request is made to the URL using requests. If the response status code is not 200 (OK), the URL is considered broken and appended to the "broken_links.txt" file. The function then returns.
 
-The script uses the argparse module to parse command-line arguments. It expects a single optional argument -url to specify the URL directly.
-If the -url argument is provided, the URL is assigned to the url variable. Otherwise, the user is prompted to enter a URL.
-If the URL doesn't start with a scheme (e.g., "http://" or "https://"), the code adds the "http://" scheme by default.
-The parse_html function is called with the URL, and the returned links are stored in the parsed_links variable.
-The valid links are saved to the file "valid_links.txt" using the save_valid_links function, and the broken links are saved to the file "broken_links.txt" using the save_broken_links function.
-Finally, a success message is printed.
+If the response status code is 200, the HTML content is parsed using BeautifulSoup.
+
+All anchor tags (<a>) in the HTML are retrieved using find_all('a').
+
+The links are extracted from the anchor tags. If the link's href attribute or the link text itself starts with "http://" or "https://", it is considered a valid link and added to the list of valid links. Otherwise, it is considered broken.
+
+The valid links are appended to the "valid_links.txt" file, and the broken links are appended to the "broken_links.txt" file.
+
+The main function is defined to handle command-line arguments. It uses argparse to parse the URL argument if provided or prompts the user to enter the URL.
+
+If the URL doesn't start with "http://" or "https://", it is prefixed with "http://".
+
+The parse_html function is called with the URL.
+
+Finally, when the code execution is complete, it prints the message "Process completed successfully."

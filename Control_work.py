@@ -1,7 +1,7 @@
 import argparse
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse
 import validators
 
 
@@ -14,40 +14,43 @@ def parse_html(url):
     if not parsed_url.scheme:
         parsed_url = parsed_url._replace(scheme='http')
     base_url = parsed_url.geturl()
-    try:
-        response = requests.get(base_url)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            links = [link['href'] for link in soup.find_all('a')]
-            absolute_links = [urljoin(base_url, link) for link in links]
-            return absolute_links
+
+    response = requests.get(base_url)
+    if response.status_code != 200:
+        with open('broken_links.txt', 'a') as file:
+            file.write(url + '\n')
+        return
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    links = soup.find_all('a')
+
+    valid_links = []
+    broken_links = []
+    for link in links:
+        href = link.get('href')
+        if href and validate_url(href):
+            valid_links.append(href)
         else:
-            print(f"Error: {response.status_code}")
-            return []
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {str(e)}")
-        return []
+            broken_links.append(href)
+
+        text = link.get_text()
+        if text and validate_url(text):
+            valid_links.append(text)
+
+    with open('valid_links.txt', 'a') as valid_file:
+        for link in valid_links:
+            valid_file.write(link + '\n')
+
+    with open('broken_links.txt', 'a') as broken_file:
+        for link in broken_links:
+            broken_file.write(link + '\n')
+
+    print("Process completed successfully.")
 
 
-def save_valid_links(links, filename):
-    with open(filename, 'a') as file:
-        for link in links:
-            if validate_url(link):
-                response = requests.get(link)
-                if response.status_code == 200:
-                    file.write(link + '\n')
-
-
-def save_broken_links(links, filename):
-    with open(filename, 'a') as file:
-        for link in links:
-            if not validate_url(link):
-                file.write(link + '\n')
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Webpage Link Parser')
-    parser.add_argument('-url', type=str, help='URL of the webpage')
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-url', type=str, help='URL of the HTML page')
     args = parser.parse_args()
 
     if args.url:
@@ -55,11 +58,11 @@ if __name__ == '__main__':
     else:
         url = input('Enter the URL: ')
 
-    if not url.startswith('http'):
+    if not url.startswith(('http://', 'https://')):
         url = 'http://' + url
 
-    parsed_links = parse_html(url)
-    save_valid_links(parsed_links, 'valid_links.txt')
-    save_broken_links(parsed_links, 'broken_links.txt')
+    parse_html(url)
 
-    print("Process completed successfully.")
+
+if __name__ == '__main__':
+    main()
