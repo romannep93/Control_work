@@ -1,41 +1,35 @@
 import argparse
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-import validators
 
 
 def validate_url(url):
-    return validators.url(url)
+    response = requests.head(url)
+    return response.status_code == 200
 
 
 def parse_html(url):
-    parsed_url = urlparse(url)
-    if not parsed_url.scheme:
-        parsed_url = parsed_url._replace(scheme='http')
-    base_url = parsed_url.geturl()
-
-    response = requests.get(base_url)
-    if response.status_code != 200:
-        with open('broken_links.txt', 'a') as file:
-            file.write(url + '\n')
+    if not validate_url(url):
+        print("Invalid URL or status code is not 200.")
         return
 
+    response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     links = soup.find_all('a')
 
     valid_links = []
     broken_links = []
+
     for link in links:
         href = link.get('href')
-        if href and validate_url(href):
+        if href and (href.startswith('http://') or href.startswith('https://')):
             valid_links.append(href)
         else:
-            broken_links.append(href)
-
-        text = link.get_text()
-        if text and validate_url(text):
-            valid_links.append(text)
+            text = link.get_text()
+            if text.startswith('http://') or text.startswith('https://'):
+                valid_links.append(text)
+            else:
+                broken_links.append(href or text)
 
     with open('valid_links.txt', 'a') as valid_file:
         for link in valid_links:
@@ -45,12 +39,10 @@ def parse_html(url):
         for link in broken_links:
             broken_file.write(link + '\n')
 
-    print("Process completed successfully.")
 
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-url', type=str, help='URL of the HTML page')
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Webpage Link Parser')
+    parser.add_argument('-url', type=str, help='URL of the webpage')
     args = parser.parse_args()
 
     if args.url:
@@ -58,11 +50,9 @@ def main():
     else:
         url = input('Enter the URL: ')
 
-    if not url.startswith(('http://', 'https://')):
+    if not url.startswith('http'):
         url = 'http://' + url
 
     parse_html(url)
 
-
-if __name__ == '__main__':
-    main()
+    print("Process completed successfully.")
