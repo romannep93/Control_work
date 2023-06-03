@@ -15,7 +15,7 @@ class PDFLinkChecker:
             page = pdf.pages[page_num]
             page_text = page.extract_text()
 
-            # Find all URLs in the page text using regular expressions
+            
             url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z0-9]|[^\s])*')
             urls = re.findall(url_pattern, page_text)
 
@@ -27,7 +27,7 @@ class PDFLinkChecker:
         # Extract links from the PDF file
         links = self.extract_links()
 
-        # Check the status code for each link
+
         for link in links:
             try:
                 response = requests.head(link)
@@ -44,12 +44,12 @@ class PDFLinkChecker:
         print("Processing links completed.")
 
 if __name__ == '__main__':
-    # Parse command-line arguments
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--pdf', help='Path to the PDF file')
     args = parser.parse_args()
 
-    # Check if the path to the PDF file is provided in the command-line arguments
+
     if args.pdf is None:
         print("Please provide the path to the PDF file.")
     else:
