@@ -5,61 +5,63 @@ from PyPDF2 import PdfReader
 from bs4 import BeautifulSoup
 import logging
 
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, filename='link_checker.log', filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def validate_url(url):
-    response = requests.head(url)
-    return response.status_code == 200
-
-
-def get_valid_links(url):
-    if not validate_url(url):
-        logging.error("Invalid URL or status code is not 200: %s", url)
-        return []
-
-    response = requests.get(url)
-    html_parser = BeautifulSoup(response.text, "html.parser")
-    links = []
-    for link in html_parser.find_all('a'):
-        href_attribute = link.get("href")
-        if href_attribute:
-            links.append(href_attribute)
-    return links
-
-
-def validate_links(links):
-    valid_links = []
-    invalid_links = []
-    for link in links:
-        if link.startswith('http://') or link.startswith('https://'):
+class LinkValidator:
+    @staticmethod
+    def is_valid(link):
+        try:
             response = requests.head(link)
-            if response.status_code == 200:
-                valid_links.append(link)
+            return response.status_code == 200
+        except requests.exceptions.RequestException:
+            return False
+
+
+class LinkExtractor:
+    def __init__(self, url):
+        self.url = url
+
+    def extract_links(self):
+        if not LinkValidator.is_valid(self.url):
+            logging.error("Invalid URL or status code is not 200: %s", self.url)
+            return []
+
+        response = requests.get(self.url)
+        html_parser = BeautifulSoup(response.text, "html.parser")
+        links = []
+        for link in html_parser.find_all('a'):
+            href_attribute = link.get("href")
+            if href_attribute:
+                links.append(href_attribute)
+        return links
+
+
+class LinkProcessor:
+    def __init__(self):
+        self.valid_links = []
+        self.invalid_links = []
+
+    def process_links(self, links):
+        validator = LinkValidator()
+        for link in links:
+            if validator.is_valid(link):
+                self.valid_links.append(link)
+                logging.info("Valid link found: %s", link)
             else:
-                invalid_links.append(link)
-        else:
-            invalid_links.append(link)
-    return valid_links, invalid_links
+                self.invalid_links.append(link)
+                logging.warning("Broken link found: %s", link)
 
 
-def save_to_file(valid_links, invalid_links):
-    with open("valid_links.txt", "w", encoding="utf-8") as valid_file:
-        valid_file.write("\n".join(valid_links))
-
-    with open("broken_links.txt", "w", encoding="utf-8") as invalid_file:
-        invalid_file.write("\n".join(invalid_links))
-
-
-def parse_html(url):
-    logging.info("Processing HTML links for URL: %s", url)
-    links = get_valid_links(url)
-    valid_links, invalid_links = validate_links(links)
-    save_to_file(valid_links, invalid_links)
-
-    logging.info("Processing HTML links completed.")
+class FileWriter:
+    @staticmethod
+    def save_links(links, file_path):
+        with open(file_path, "a", encoding="utf-8") as file:
+            for link in links:
+                file.write(link + '\n')
 
 
 class PDFLinkChecker:
@@ -69,11 +71,10 @@ class PDFLinkChecker:
     def extract_links(self):
         links = []
         pdf = PdfReader(self.pdf_file)
-        for page_num in range(len(pdf.pages)):
-            page = pdf.pages[page_num]
+        for page in pdf.pages:
             page_text = page.extract_text()
 
-            url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z0-9]|[^\s])*')
+            url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z0-9]|\S)*')
             urls = re.findall(url_pattern, page_text)
 
             links.extend(urls)
@@ -84,21 +85,11 @@ class PDFLinkChecker:
         logging.info("Processing PDF links for file: %s", self.pdf_file)
         links = self.extract_links()
 
-        for link in links:
-            try:
-                response = requests.head(link)
-                if response.status_code != 200:
-                    with open('broken_links.txt', 'a') as file:
-                        file.write(link + '\n')
-                        logging.warning("Broken link found: %s", link)
-            except requests.exceptions.RequestException:
-                with open('broken_links.txt', 'a') as file:
-                    file.write(link + '\n')
-                    logging.warning("Broken link found: %s", link)
-            else:
-                with open('valid_links.txt', 'a') as file:
-                    file.write(link + '\n')
-                    logging.info("Valid link found: %s", link)
+        link_processor = LinkProcessor()
+        link_processor.process_links(links)
+
+        FileWriter.save_links(link_processor.valid_links, 'valid_links.txt')
+        FileWriter.save_links(link_processor.invalid_links, 'broken_links.txt')
 
         logging.info("Processing PDF links completed.")
 
@@ -113,17 +104,29 @@ if __name__ == '__main__':
         url = input('Enter the URL: ')
         if not url.startswith('http'):
             url = 'http://' + url
-        parse_html(url)
 
-        pdf_file = input('Enter the path to the PDF file: ')
-        pdf_link_checker = PDFLinkChecker(pdf_file)
-        pdf_link_checker.process_links()
+        link_extractor = LinkExtractor(url)
+        links = link_extractor.extract_links()
+
+        link_processor = LinkProcessor()
+        link_processor.process_links(links)
+
+        FileWriter.save_links(link_processor.valid_links, 'valid_links.txt')
+        FileWriter.save_links(link_processor.invalid_links, 'broken_links.txt')
     else:
         if args.url:
             url = args.url
             if not url.startswith('http'):
                 url = 'http://' + url
-            parse_html(url)
+
+            link_extractor = LinkExtractor(url)
+            links = link_extractor.extract_links()
+
+            link_processor = LinkProcessor()
+            link_processor.process_links(links)
+
+            FileWriter.save_links(link_processor.valid_links, 'valid_links.txt')
+            FileWriter.save_links(link_processor.invalid_links, 'broken_links.txt')
         if args.pdf:
             pdf_file = args.pdf
             pdf_link_checker = PDFLinkChecker(pdf_file)
