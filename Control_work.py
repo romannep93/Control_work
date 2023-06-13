@@ -94,40 +94,57 @@ class PDFLinkChecker:
         logging.info("Processing PDF links completed.")
 
 
-if __name__ == '__main__':
+def process_url(url):
+    link_extractor = LinkExtractor(url)
+    links = link_extractor.extract_links()
+
+    link_processor = LinkProcessor()
+    link_processor.process_links(links)
+
+    FileWriter.save_links(link_processor.valid_links, 'valid_links.txt')
+    FileWriter.save_links(link_processor.invalid_links, 'broken_links.txt')
+
+
+def process_pdf(pdf_file):
+    pdf_link_checker = PDFLinkChecker(pdf_file)
+    pdf_link_checker.process_links()
+
+
+def main():
     parser = argparse.ArgumentParser(description='Link Checker')
     parser.add_argument('-url', type=str, help='URL of the webpage')
     parser.add_argument('--pdf', help='Path to the PDF file')
     args = parser.parse_args()
 
     if not args.url and not args.pdf:
-        url = input('Enter the URL: ')
-        if not url.startswith('http'):
-            url = 'http://' + url
+        while True:
+            user_choice = input("Choose an option (pdf or url): ")
+            if user_choice.lower() == "pdf":
+                pdf_file = input("Enter the path to the PDF file: ")
+                process_pdf(pdf_file)
+                break
+            elif user_choice.lower() == "url":
+                url = input("Enter the URL: ")
+                if not url.startswith('http'):
+                    url = 'http://' + url
+                process_url(url)
+                break
+            else:
+                print("Invalid choice. Please choose 'pdf' or 'url'.")
 
-        link_extractor = LinkExtractor(url)
-        links = link_extractor.extract_links()
-
-        link_processor = LinkProcessor()
-        link_processor.process_links(links)
-
-        FileWriter.save_links(link_processor.valid_links, 'valid_links.txt')
-        FileWriter.save_links(link_processor.invalid_links, 'broken_links.txt')
     else:
         if args.url:
             url = args.url
             if not url.startswith('http'):
                 url = 'http://' + url
+            process_url(url)
 
-            link_extractor = LinkExtractor(url)
-            links = link_extractor.extract_links()
-
-            link_processor = LinkProcessor()
-            link_processor.process_links(links)
-
-            FileWriter.save_links(link_processor.valid_links, 'valid_links.txt')
-            FileWriter.save_links(link_processor.invalid_links, 'broken_links.txt')
         if args.pdf:
             pdf_file = args.pdf
-            pdf_link_checker = PDFLinkChecker(pdf_file)
-            pdf_link_checker.process_links()
+            process_pdf(pdf_file)
+
+    print("Link checking completed.")
+
+
+if __name__ == '__main__':
+    main()
