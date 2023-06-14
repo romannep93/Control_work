@@ -1,14 +1,5 @@
 import os
-import pytest
 from Control_work import LinkProcessor, FileWriter, PDFLinkChecker, LinkValidator, LinkExtractor
-
-
-@pytest.fixture
-def create_temp_file(tmpdir):
-    file_path = str(tmpdir.join("temp_file.txt"))
-    yield file_path
-    if os.path.exists(file_path):
-        os.remove(file_path)
 
 
 def test_valid_link_validator():
@@ -23,20 +14,18 @@ def test_valid_link_extractor():
     assert len(links) > 0
 
 
-def test_valid_link_processor():
-    links = ["https://www.google.com", "https://www.example.com"]
+def test_valid_link_processor(test_links):
     link_processor = LinkProcessor()
-    link_processor.process_links(links)
-    assert len(link_processor.valid_links) == len(links)
+    link_processor.process_links(test_links)
+    assert all(link in link_processor.valid_links for link in test_links if link != 'invalid_link')
 
 
-def test_valid_file_writer(create_temp_file):
-    links = ["https://www.google.com", "https://www.example.com"]
+def test_valid_file_writer(create_temp_file, test_links):
     file_path = create_temp_file
-    FileWriter.save_links(links, file_path)
+    FileWriter.save_links(test_links, file_path)
     with open(file_path, "r") as f:
         saved_links = f.read().splitlines()
-    assert saved_links == links
+    assert saved_links == test_links
 
     # Вывод сохраненных линков
     print("Сохраненные линки:")
@@ -44,7 +33,7 @@ def test_valid_file_writer(create_temp_file):
         print(link)
 
 
-def test_valid_pdf_link_checker():
+def test_valid_pdf_link_checker(create_temp_file):
     pdf_file = os.path.join(os.path.dirname(__file__), "../1.pdf")
     pdf_link_checker = PDFLinkChecker(pdf_file)
     links = pdf_link_checker.extract_links()
@@ -68,20 +57,18 @@ def test_invalid_link_extractor():
     assert len(links) == 0
 
 
-def test_invalid_link_processor():
-    links = ["https://www.google.com", "invalid_link"]
+def test_invalid_link_processor(test_links):
     link_processor = LinkProcessor()
-    link_processor.process_links(links)
+    link_processor.process_links(test_links)
     assert len(link_processor.invalid_links) == 1
 
 
-def test_invalid_file_writer(create_temp_file):
-    links = ["https://www.google.com", "invalid_link"]
+def test_invalid_file_writer(create_temp_file, test_links):
     file_path = create_temp_file
-    FileWriter.save_links(links, file_path)
+    FileWriter.save_links(test_links, file_path)
     with open(file_path, "r") as f:
         saved_links = f.read().splitlines()
-    assert saved_links == links
+    assert saved_links == test_links
 
     # Вывод сохраненных линков
     print("Сохраненные линки:")
@@ -89,7 +76,7 @@ def test_invalid_file_writer(create_temp_file):
         print(link)
 
 
-def test_invalid_pdf_link_checker():
+def test_invalid_pdf_link_checker(create_temp_file):
     pdf_file = os.path.join(os.path.dirname(__file__), "../invalid.pdf")
     pdf_link_checker = PDFLinkChecker(pdf_file)
     try:
@@ -102,9 +89,3 @@ def test_invalid_pdf_link_checker():
     print("Сохраненные линки:")
     for link in links:
         print(link)
-
-
-
-
-if __name__ == '__main__':
-    pytest.main()
