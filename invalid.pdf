@@ -1,0 +1,44 @@
+{\rtf1\ansi\ansicpg1251\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww19360\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 %PDF-1.0\
+1 0 obj\
+<< /Title (Invalid PDF) >>\
+endobj\
+2 0 obj\
+<< /Type /Catalog /Pages 3 0 R >>\
+endobj\
+3 0 obj\
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>\
+endobj\
+4 0 obj\
+<< /Type /Page /Parent 3 0 R /Contents 5 0 R >>\
+endobj\
+5 0 obj\
+<< /Length 18 >>\
+stream\
+BT\
+/F1 12 Tf\
+100 100 Td\
+(Hello, Invalid PDF!) Tj\
+ET\
+endstream\
+endobj\
+xref\
+0 6\
+0000000000 65535 f \
+0000000009 00000 n \
+0000000074 00000 n \
+0000000178 00000 n \
+0000000277 00000 n \
+0000000371 00000 n \
+trailer\
+<< /Size 6 /Root 2 0 R >>\
+startxref\
+515\
+%%EOF\
+}
